@@ -23,10 +23,14 @@ const fetchApi = async (ctx: ActionHandlerContext, url: string) => {
 export const tubiTvAddon = createWorkerAddon({
   id: "tubitv.com",
   name: "tubi",
-  version: require("../package").version,
+  version: "0.0.1",
   icon: "https://tubitv.com/favicon.ico",
   poster: "https://cdn.adrise.tv/web/android-chrome-192x192.png",
   itemTypes: ["movie", "series"],
+  defaultDirectoryOptions: {
+    imageShape: "landscape",
+    displayName: true
+  },
   defaultDirectoryFeatures: {
     search: { enabled: true }
   },
@@ -92,13 +96,33 @@ const convertItem = (data: any): PlayableItem => {
 };
 
 tubiTvAddon.registerActionHandler("directory", async (input, ctx) => {
-  await ctx.requestCache([input.region, input.id], {
-    ttl: "forever",
+  await ctx.requestCache([input.region, input.search, input.id], {
+    ttl: Infinity,
     refreshInterval: 8 * 3600 * 1000
   });
 
-  if (!input.id) {
-    // Categories
+  if (input.search) {
+    const data: any = await fetchApi(
+      ctx,
+      `https://tubitv.com/oz/search/${input.search}`
+    );
+    const items = data.map(convertItem);
+    return {
+      items,
+      hasMore: false
+    };
+  } else if (input.id) {
+    const offset = ((input.page ?? 1) - 1) * DIRECTORY_LIMIT;
+    const data: any = await fetchApi(
+      ctx,
+      `https://tubitv.com/oz/containers/${input.id}/content?parentId&cursor=${offset}&limit=${DIRECTORY_LIMIT}`
+    );
+    const items = Object.values(data.contents).map(convertItem);
+    return {
+      items,
+      hasMore: data[input.id]?.cursor ? true : false
+    };
+  } else {
     const data: any = await fetchApi(
       ctx,
       "https://tubitv.com/oz/containers?expand=0"
@@ -118,34 +142,8 @@ tubiTvAddon.registerActionHandler("directory", async (input, ctx) => {
       });
     }
     return {
-      options: {
-        imageShape: "landscape",
-        displayName: true
-      },
       items,
       hasMore: false
-    };
-  } else if (input.search) {
-    const data: any = await fetchApi(
-      ctx,
-      `https://tubitv.com/oz/search/${input.search}`
-    );
-    const items = data.map(convertItem);
-    return {
-      items,
-      hasMore: false
-    };
-  } else {
-    // Single directory
-    const offset = ((input.page ?? 1) - 1) * DIRECTORY_LIMIT;
-    const data: any = await fetchApi(
-      ctx,
-      `https://tubitv.com/oz/containers/${input.id}/content?parentId&cursor=${offset}&limit=${DIRECTORY_LIMIT}`
-    );
-    const items = Object.values(data.contents).map(convertItem);
-    return {
-      items,
-      hasMore: data[input.id]?.cursor ? true : false
     };
   }
 });
