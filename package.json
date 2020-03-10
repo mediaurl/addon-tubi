@@ -1,5 +1,5 @@
 {
-  "name": "addon-tubitv-com",
+  "name": "watched-addon-tubitv",
   "version": "1.0.0",
   "main": "dist",
   "scripts": {
