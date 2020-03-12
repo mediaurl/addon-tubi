@@ -109,43 +109,52 @@ tubiTvAddon.registerActionHandler("directory", async (input, ctx) => {
     const items = data.map(convertItem);
     return {
       items,
-      hasMore: false
+      nextCursor: null
     };
-  } else if (input.id) {
-    const offset = ((input.page ?? 1) - 1) * DIRECTORY_LIMIT;
-    const data: any = await fetchApi(
+  }
+
+  if (input.id) {
+    const offset = input.cursor || 0;
+
+    const data = await fetchApi(
       ctx,
       `https://tubitv.com/oz/containers/${input.id}/content?parentId&cursor=${offset}&limit=${DIRECTORY_LIMIT}`
     );
+
+    const cursor: number = data.containersHash[input.id].cursor;
+
     const items = Object.values(data.contents).map(convertItem);
+
     return {
       items,
-      hasMore: data[input.id]?.cursor ? true : false
-    };
-  } else {
-    const data: any = await fetchApi(
-      ctx,
-      "https://tubitv.com/oz/containers?expand=0"
-    );
-    const items: DirectoryItem[] = [];
-    for (const entry of Object.values(data.hash) as any[]) {
-      items.push({
-        id: entry.id,
-        name: entry.title,
-        description: entry.description,
-        type: "directory",
-        images: {
-          poster: entry.thumbnail,
-          background: entry.backgrounds[0],
-          logo: entry.logo
-        }
-      });
-    }
-    return {
-      items,
-      hasMore: false
+      nextCursor: cursor || null
     };
   }
+
+  const data: any = await fetchApi(
+    ctx,
+    "https://tubitv.com/oz/containers?expand=0"
+  );
+
+  const items: DirectoryItem[] = Object.values(data.hash).map((entry: any) => {
+    return {
+      id: entry.id,
+      ids: { id: entry.id },
+      name: entry.title,
+      description: entry.description,
+      type: "directory",
+      images: {
+        poster: entry.thumbnail,
+        background: entry.backgrounds[0],
+        logo: entry.logo
+      }
+    };
+  });
+
+  return {
+    items,
+    nextCursor: null
+  };
 });
 
 tubiTvAddon.registerActionHandler("item", async (input, ctx) => {
