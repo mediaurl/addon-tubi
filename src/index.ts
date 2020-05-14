@@ -3,14 +3,15 @@ import {
   createWorkerAddon,
   DirectoryItem,
   PlayableItem,
-  SeriesEpisodeItem
+  SeriesEpisodeItem,
+  runCli,
 } from "@watchedcom/sdk";
 
 const DIRECTORY_LIMIT = 100;
 
 const TYPE_CONVERT = {
   v: "movie",
-  s: "series"
+  s: "series",
 };
 
 const fetchApi = async (ctx: ActionHandlerContext, url: string) => {
@@ -20,7 +21,7 @@ const fetchApi = async (ctx: ActionHandlerContext, url: string) => {
   return data;
 };
 
-export const tubiTvAddon = createWorkerAddon({
+const tubiTvAddon = createWorkerAddon({
   id: "tubitv.com",
   name: "tubi",
   version: "0.0.1",
@@ -29,14 +30,14 @@ export const tubiTvAddon = createWorkerAddon({
   itemTypes: ["movie", "series"],
   defaultDirectoryOptions: {
     imageShape: "landscape",
-    displayName: true
+    displayName: true,
   },
   defaultDirectoryFeatures: {
-    search: { enabled: true }
+    search: { enabled: true },
   },
   regions: {
-    forbidden: ["de"]
-  }
+    forbidden: ["de"],
+  },
 });
 
 const convertItem = (data: any): PlayableItem => {
@@ -59,9 +60,9 @@ const convertItem = (data: any): PlayableItem => {
                 id: "main",
                 type: "url",
                 url: res.manifest.url,
-                format: res.type
+                format: res.type,
               }))
-            : undefined
+            : undefined,
         });
       }
     }
@@ -80,7 +81,7 @@ const convertItem = (data: any): PlayableItem => {
     images: {
       poster: data.posterarts?.[0],
       background: data.backgrounds?.[0],
-      logo: data.logo
+      logo: data.logo,
     },
     episodes,
     sources: data.url
@@ -88,17 +89,17 @@ const convertItem = (data: any): PlayableItem => {
           {
             id: "main",
             type: "url",
-            url: data.url
-          }
+            url: data.url,
+          },
         ]
-      : undefined
+      : undefined,
   };
 };
 
 tubiTvAddon.registerActionHandler("directory", async (input, ctx) => {
   await ctx.requestCache([input.region, input.search, input.id], {
     ttl: Infinity,
-    refreshInterval: 8 * 3600 * 1000
+    refreshInterval: 8 * 3600 * 1000,
   });
 
   if (input.search) {
@@ -109,7 +110,7 @@ tubiTvAddon.registerActionHandler("directory", async (input, ctx) => {
     const items = data.map(convertItem);
     return {
       items,
-      nextCursor: null
+      nextCursor: null,
     };
   }
 
@@ -127,7 +128,7 @@ tubiTvAddon.registerActionHandler("directory", async (input, ctx) => {
 
     return {
       items,
-      nextCursor: cursor || null
+      nextCursor: cursor || null,
     };
   }
 
@@ -146,14 +147,14 @@ tubiTvAddon.registerActionHandler("directory", async (input, ctx) => {
       images: {
         poster: entry.thumbnail,
         background: entry.backgrounds[0],
-        logo: entry.logo
-      }
+        logo: entry.logo,
+      },
     };
   });
 
   return {
     items,
-    nextCursor: null
+    nextCursor: null,
   };
 });
 
@@ -173,3 +174,5 @@ tubiTvAddon.registerActionHandler("item", async (input, ctx) => {
     return convertItem(data);
   }
 });
+
+runCli([tubiTvAddon], { singleMode: true });
