@@ -1,7 +1,6 @@
-# tubiTv addon for [WATCHED.com](https://www.watched.com)
+# [Tubi](https://tubitv.com/) addon for [MediaURL](https://mediaurl.io)
 
-For more infos about WATCHED addons, please see our [WATCHED.com developer infos](https://www.watched.com/developer).
-This addon was created with the [WATCHED javascript SDK](https://github.com/watchedcom/sdk-javascript).
+This addon was created with the [MediaURL Javascript SDK](https://github.com/mediaurl/mediaurl-js).
 
 ## Start the development addon server
 

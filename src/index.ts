@@ -5,7 +5,7 @@ import {
   PlayableItem,
   SeriesEpisodeItem,
   runCli,
-} from "@watchedcom/sdk";
+} from "@mediaurl/sdk";
 
 const DIRECTORY_LIMIT = 100;
 
